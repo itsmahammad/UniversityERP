@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/UniversityERP.API/UniversityERP.API.csproj" />
+    <Project Path="src/UniversityERP.Application/UniversityERP.Application.csproj" />
+    <Project Path="src/UniversityERP.Domain/UniversityERP.Domain.csproj" />
+    <Project Path="src/UniversityERP.Infrastructure/UniversityERP.Infrastructure.csproj" />
+  </Folder>
+</Solution>
