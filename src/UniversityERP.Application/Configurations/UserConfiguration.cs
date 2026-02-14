@@ -1,0 +1,35 @@
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using UniversityERP.Domain.Entities;
+
+namespace UniversityERP.Application.Configurations;
+
+public class UserConfiguration : IEntityTypeConfiguration<User>
+{
+    public void Configure(EntityTypeBuilder<User> builder)
+    {
+        builder.ToTable("Users");
+
+        builder.HasKey(x => x.Id);
+
+        builder.Property(x => x.FullName)
+            .IsRequired()
+            .HasMaxLength(150);
+
+        builder.Property(x => x.Email)
+            .IsRequired()
+            .HasMaxLength(200);
+
+        builder.Property(x => x.PasswordHash)
+            .IsRequired();
+
+        builder.Property(x => x.IsActive)
+            .HasDefaultValue(true);
+
+        builder.HasQueryFilter(x => !x.IsDeleted);
+
+        builder.HasIndex(x => x.Email)
+            .IsUnique()
+            .HasFilter("\"IsDeleted\" = false");
+    }
+}

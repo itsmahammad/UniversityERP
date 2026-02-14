@@ -25,5 +25,6 @@ public static class ApplicationServiceRegistration
         });
 
         services.AddScoped<IFacultyRepository, FacultyRepository>();
+        services.AddScoped<IUserRepository, UserRepository>();
     }
 }
