@@ -10,7 +10,7 @@ namespace UniversityERP.API;
 
 public class Program
 {
-    public static void Main(string[] args)
+    public static async Task Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
 
@@ -91,6 +91,38 @@ public class Program
 
         app.MapControllers();
 
-        app.Run();
+        //Seed admin user (DEV ONLY)
+        await SeedAdminAsync(app);
+
+        await app.RunAsync();
+    }
+
+    private static async Task SeedAdminAsync(WebApplication app)
+    {
+        if (!app.Environment.IsDevelopment())
+            return;
+
+        using var scope = app.Services.CreateScope();
+
+        var userRepo = scope.ServiceProvider.GetRequiredService<UniversityERP.Application.Repositories.Abstractions.IUserRepository>();
+
+        var adminEmail = "admin@uni.local";
+
+        var exists = await userRepo.ExistsByEmailAsync(adminEmail, ignoreQueryFilter: true);
+        if (exists) return;
+
+        var admin = new UniversityERP.Domain.Entities.User
+        {
+            FullName = "System Admin",
+            Email = adminEmail,
+            Role = UniversityERP.Domain.Enums.UserRole.Admin,
+            IsActive = true
+        };
+
+        var hasher = new Microsoft.AspNetCore.Identity.PasswordHasher<UniversityERP.Domain.Entities.User>();
+        admin.PasswordHash = hasher.HashPassword(admin, "Admin123!");
+
+        await userRepo.AddAsync(admin);
+        await userRepo.SaveChangesAsync();
     }
 }

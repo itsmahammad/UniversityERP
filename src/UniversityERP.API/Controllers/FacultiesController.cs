@@ -1,9 +1,11 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using UniversityERP.Infrastructure.Dtos.FacultyDtos;
 using UniversityERP.Infrastructure.Services.Abstractions;
 
 namespace UniversityERP.API.Controllers;
 
+[Authorize(Roles = "Admin")]
 [Route("api/[controller]")]
 [ApiController]
 public class FacultiesController(IFacultyService _service) : ControllerBase
