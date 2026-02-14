@@ -44,4 +44,24 @@ public class UsersController : ControllerBase
         return StatusCode(result.StatusCode, result);
     }
 
+    [HttpPatch("{id:guid}/activate")]
+    public async Task<IActionResult> Activate([FromRoute] Guid id)
+    {
+        var result = await _users.ActivateAsync(id);
+        return StatusCode(result.StatusCode, result);
+    }
+
+    [HttpPatch("{id:guid}/deactivate")]
+    public async Task<IActionResult> Deactivate([FromRoute] Guid id)
+    {
+        var result = await _users.DeactivateAsync(id);
+        return StatusCode(result.StatusCode, result);
+    }
+
+    [HttpPatch("{id:guid}/role")]
+    public async Task<IActionResult> ChangeRole([FromRoute] Guid id, [FromBody] ChangeRoleDto dto)
+    {
+        var result = await _users.ChangeRoleAsync(id, dto);
+        return StatusCode(result.StatusCode, result);
+    }
 }

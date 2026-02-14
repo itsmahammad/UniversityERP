@@ -17,4 +17,9 @@ public interface IUserService
         bool? isActive);
 
     Task<ResultDto<UserGetDto>> GetByIdAsync(Guid id);
+
+    Task<ResultDto> ActivateAsync(Guid id);
+    Task<ResultDto> DeactivateAsync(Guid id);
+    Task<ResultDto> ChangeRoleAsync(Guid id, ChangeRoleDto dto);
+
 }

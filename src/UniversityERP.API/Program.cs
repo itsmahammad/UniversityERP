@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using System.Text;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -70,11 +71,15 @@ public class Program
                     ValidIssuer = jwt.Issuer,
                     ValidAudience = jwt.Audience,
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt.Key)),
-                    ClockSkew = TimeSpan.FromSeconds(30)
+                    ClockSkew = TimeSpan.FromSeconds(30),
+
+                    NameClaimType = "sub",
+                    RoleClaimType = ClaimTypes.Role
                 };
             });
 
         builder.Services.AddAuthorization();
+        builder.Services.AddHttpContextAccessor();
 
         var app = builder.Build();
 
