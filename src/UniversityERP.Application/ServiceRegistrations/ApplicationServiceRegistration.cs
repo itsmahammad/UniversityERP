@@ -24,7 +24,6 @@ public static class ApplicationServiceRegistration
             options.AddInterceptors(interceptor);
         });
 
-        // services.AddScoped<IFacultyRepository, FacultyRepository>();
-        // services.AddScoped<IStudentRepository, StudentRepository>();
+        services.AddScoped<IFacultyRepository, FacultyRepository>();
     }
 }

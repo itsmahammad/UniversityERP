@@ -8,63 +8,43 @@ namespace UniversityERP.Application.Repositories.Implementations.Generic;
 
 internal class Repository<T> : IRepository<T> where T : BaseEntity
 {
-    private readonly AppDbContext _context;
+    protected readonly AppDbContext _context;
+    protected readonly DbSet<T> _dbSet;
 
     public Repository(AppDbContext context)
     {
         _context = context;
+        _dbSet = _context.Set<T>();
     }
 
-    public async Task AddAsync(T entity)
+    public IQueryable<T> GetAll(bool ignoreQueryFilter = false)
     {
-        await _context.Set<T>().AddAsync(entity);
-    }
-
-
-    public async Task<bool> AnyAsync(Expression<Func<T, bool>> expression)
-    {
-        var result = await _context.Set<T>().AnyAsync(expression);
-
-        return result;
-    }
-
-    public void Delete(T entity)
-    {
-        _context.Set<T>().Remove(entity);
-    }
-
-    public IQueryable<T> GetAll(bool ignoreQueryFilter = false) //(SELECT * FROM Products ).Include(x=>x.Category).OrderBy(x=>x.Id).GroupBy(x=>x.Id)
-    {
-        var query = _context.Set<T>().AsQueryable();
+        var query = _dbSet.AsQueryable();
 
         if (ignoreQueryFilter)
             query = query.IgnoreQueryFilters();
 
-
         return query;
     }
 
-    public async Task<T?> GetAsync(Expression<Func<T, bool>> expression)
-    {
-        var entity = await _context.Set<T>().FirstOrDefaultAsync(expression);
+    public Task<T?> GetByIdAsync(Guid id)
+        => _dbSet.FindAsync(id).AsTask();
 
-        return entity;
-    }
+    public Task<T?> GetAsync(Expression<Func<T, bool>> expression)
+        => _dbSet.FirstOrDefaultAsync(expression);
 
-    public async Task<T?> GetByIdAsync(Guid id)
-    {
-        var result = await _context.Set<T>().FindAsync(id);
+    public Task<bool> AnyAsync(Expression<Func<T, bool>> expression)
+        => _dbSet.AnyAsync(expression);
 
-        return result;
-    }
-
-    public async Task<int> SaveChangesAsync()
-    {
-        return await _context.SaveChangesAsync();
-    }
+    public Task AddAsync(T entity)
+        => _dbSet.AddAsync(entity).AsTask();
 
     public void Update(T entity)
-    {
-        _context.Set<T>().Update(entity);
-    }
+        => _dbSet.Update(entity);
+
+    public void Delete(T entity)
+        => _dbSet.Remove(entity); // interceptor will turn this into soft delete
+
+    public Task<int> SaveChangesAsync()
+        => _context.SaveChangesAsync();
 }
