@@ -1,7 +1,10 @@
 ﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using UniversityERP.Application.Repositories.Abstractions;
 using UniversityERP.Domain.Entities;
+using UniversityERP.Domain.Enums;
 using UniversityERP.Infrastructure.Dtos;
+using UniversityERP.Infrastructure.Dtos.Common;
 using UniversityERP.Infrastructure.Dtos.UserDtos;
 using UniversityERP.Infrastructure.Services.Abstractions;
 
@@ -61,4 +64,91 @@ internal class UserService : IUserService
             }
         };
     }
+
+    public async Task<ResultDto<PagedResponseDto<UserGetDto>>> GetPagedAsync(int page, int pageSize, string? search,
+        UserRole? role, bool? isActive)
+    {
+        page = page < 1 ? 1 : page;
+        pageSize = pageSize < 1 ? 10 : pageSize;
+        pageSize = pageSize > 100 ? 100 : pageSize;
+
+        var query = _users.GetAll().AsNoTracking();
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var s = search.Trim().ToLower();
+            query = query.Where(x =>
+                x.FullName.ToLower().Contains(s) ||
+                x.Email.ToLower().Contains(s));
+        }
+
+        if (role.HasValue)
+            query = query.Where(x => x.Role == role.Value);
+
+        if (isActive.HasValue)
+            query = query.Where(x => x.IsActive == isActive.Value);
+
+        var total = await query.CountAsync();
+
+        var items = await query
+            .OrderBy(x => x.FullName)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(x => new UserGetDto
+            {
+                Id = x.Id,
+                FullName = x.FullName,
+                Email = x.Email,
+                Role = x.Role,
+                IsActive = x.IsActive,
+                PositionTitle = x.PositionTitle
+            })
+            .ToListAsync();
+
+        return new ResultDto<PagedResponseDto<UserGetDto>>
+        {
+            StatusCode = 200,
+            IsSucced = true,
+            Message = "Successfully",
+            Data = new PagedResponseDto<UserGetDto>
+            {
+                Page = page,
+                PageSize = pageSize,
+                TotalCount = total,
+                Items = items
+            }
+        };
+    }
+
+    public async Task<ResultDto<UserGetDto>> GetByIdAsync(Guid id)
+    {
+        var user = await _users.GetAsync(x => x.Id == id);
+
+        if (user is null)
+        {
+            return new ResultDto<UserGetDto>
+            {
+                StatusCode = 404,
+                IsSucced = false,
+                Message = "User not found."
+            };
+        }
+
+        return new ResultDto<UserGetDto>
+        {
+            StatusCode = 200,
+            IsSucced = true,
+            Message = "Successfully",
+            Data = new UserGetDto
+            {
+                Id = user.Id,
+                FullName = user.FullName,
+                Email = user.Email,
+                Role = user.Role,
+                IsActive = user.IsActive,
+                PositionTitle = user.PositionTitle
+            }
+        };
+    }
+
 }

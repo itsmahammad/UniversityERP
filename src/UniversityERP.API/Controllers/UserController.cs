@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using UniversityERP.Domain.Enums;
 using UniversityERP.Infrastructure.Dtos.UserDtos;
 using UniversityERP.Infrastructure.Services.Abstractions;
 
@@ -23,4 +24,24 @@ public class UsersController : ControllerBase
         var result = await _users.CreateAsync(dto);
         return StatusCode(result.StatusCode, result);
     }
+
+    [HttpGet]
+    public async Task<IActionResult> GetPaged(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
+        [FromQuery] string? search = null,
+        [FromQuery] UserRole? role = null,
+        [FromQuery] bool? isActive = null)
+    {
+        var result = await _users.GetPagedAsync(page, pageSize, search, role, isActive);
+        return StatusCode(result.StatusCode, result);
+    }
+
+    [HttpGet("{id:guid}")]
+    public async Task<IActionResult> GetById([FromRoute] Guid id)
+    {
+        var result = await _users.GetByIdAsync(id);
+        return StatusCode(result.StatusCode, result);
+    }
+
 }
