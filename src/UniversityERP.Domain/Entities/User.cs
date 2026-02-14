@@ -12,6 +12,7 @@ public class User : BaseAuditableEntity
     public string PasswordHash { get; set; } = default!;
 
     public UserRole Role { get; set; } = UserRole.Student;
+    public string? PositionTitle { get; set; }
 
     public bool IsActive { get; set; } = true;
 }

@@ -4,6 +4,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using UniversityERP.API.Middlewares;
 using UniversityERP.Application.ServiceRegistrations;
+using UniversityERP.Domain.Enums;
 using UniversityERP.Infrastructure.Options;
 using UniversityERP.Infrastructure.ServiceRegistrations;
 namespace UniversityERP.API;
@@ -106,21 +107,21 @@ public class Program
 
         var userRepo = scope.ServiceProvider.GetRequiredService<UniversityERP.Application.Repositories.Abstractions.IUserRepository>();
 
-        var adminEmail = "admin@uni.local";
+        var adminEmail = "superadmin@uni.local";
 
         var exists = await userRepo.ExistsByEmailAsync(adminEmail, ignoreQueryFilter: true);
         if (exists) return;
 
         var admin = new UniversityERP.Domain.Entities.User
         {
-            FullName = "System Admin",
+            FullName = "Super Admin",
             Email = adminEmail,
-            Role = UniversityERP.Domain.Enums.UserRole.Admin,
+            Role = UserRole.SuperAdmin,
             IsActive = true
         };
 
         var hasher = new Microsoft.AspNetCore.Identity.PasswordHasher<UniversityERP.Domain.Entities.User>();
-        admin.PasswordHash = hasher.HashPassword(admin, "Admin123!");
+        admin.PasswordHash = hasher.HashPassword(admin, "SuperAdmin123!");
 
         await userRepo.AddAsync(admin);
         await userRepo.SaveChangesAsync();

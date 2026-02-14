@@ -2,7 +2,12 @@
 
 public enum UserRole
 {
-    Admin = 1,
-    Student = 2,
-    Teacher = 3
+    SuperAdmin = 1,
+
+    AcademicAdmin = 10,
+    FinanceAdmin  = 11,
+    HrAdmin= 12,
+
+    Teacher = 20,
+    Student = 30
 }

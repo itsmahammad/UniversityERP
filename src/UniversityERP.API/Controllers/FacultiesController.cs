@@ -5,7 +5,7 @@ using UniversityERP.Infrastructure.Services.Abstractions;
 
 namespace UniversityERP.API.Controllers;
 
-[Authorize(Roles = "Admin")]
+[Authorize(Roles = "SuperAdmin")]
 [Route("api/[controller]")]
 [ApiController]
 public class FacultiesController(IFacultyService _service) : ControllerBase
