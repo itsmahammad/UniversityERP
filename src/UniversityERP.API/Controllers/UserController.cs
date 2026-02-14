@@ -64,4 +64,12 @@ public class UsersController : ControllerBase
         var result = await _users.ChangeRoleAsync(id, dto);
         return StatusCode(result.StatusCode, result);
     }
+
+    [HttpPost("{id:guid}/reset-password")]
+    public async Task<IActionResult> ResetPassword([FromRoute] Guid id, [FromBody] ResetPasswordDto dto)
+    {
+        var result = await _users.ResetPasswordAsync(id, dto);
+        return StatusCode(result.StatusCode, result);
+    }
+
 }

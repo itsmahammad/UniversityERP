@@ -227,5 +227,18 @@ internal class UserService : IUserService
         return new ResultDto(200, true, "Role updated successfully.");
     }
 
+    public async Task<ResultDto> ResetPasswordAsync(Guid id, ResetPasswordDto dto)
+    {
+        var user = await _users.GetAsync(x => x.Id == id);
+        if (user is null)
+            return new ResultDto(404, false, "User not found.");
+
+        user.PasswordHash = _hasher.HashPassword(user, dto.NewPassword);
+
+        _users.Update(user);
+        await _users.SaveChangesAsync();
+
+        return new ResultDto(200, true, "Password reset successfully.");
+    }
 
 }

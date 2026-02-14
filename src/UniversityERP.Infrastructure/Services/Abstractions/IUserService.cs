@@ -20,6 +20,9 @@ public interface IUserService
 
     Task<ResultDto> ActivateAsync(Guid id);
     Task<ResultDto> DeactivateAsync(Guid id);
+
     Task<ResultDto> ChangeRoleAsync(Guid id, ChangeRoleDto dto);
+
+    Task<ResultDto> ResetPasswordAsync(Guid id, ResetPasswordDto dto);
 
 }
