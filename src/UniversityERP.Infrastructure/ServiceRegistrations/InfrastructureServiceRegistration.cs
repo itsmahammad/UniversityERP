@@ -17,6 +17,9 @@ public static class InfrastructureServiceRegistration
     {
         services.Configure<JwtOptions>(config.GetSection("Jwt"));
 
+        services.Configure<EmailOptions>(config.GetSection("Email"));
+        services.AddScoped<IEmailSender, SmtpEmailSender>();
+
         services.AddScoped<IJwtTokenService, JwtTokenService>();
         services.AddScoped<IAuthService, AuthService>();
 
@@ -27,6 +30,5 @@ public static class InfrastructureServiceRegistration
         services.AddValidatorsFromAssemblyContaining<UserCreateDtoValidator>();
 
         services.AddScoped<IUserService, UserService>();
-        services.AddScoped<IFacultyService, FacultyService>();
     }
 }

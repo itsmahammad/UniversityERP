@@ -12,6 +12,9 @@ public class UserImportRowResultDto
     public bool? IsActive { get; set; }
     public string? PositionTitle { get; set; }
 
+    public string? PersonalEmail { get; set; }
+    public bool CredentialsEmailed { get; set; } // true if we emailed
+
     public string? TempPassword { get; set; } // only if Success=true
     public string? Error { get; set; }        // only if Success=false
 }

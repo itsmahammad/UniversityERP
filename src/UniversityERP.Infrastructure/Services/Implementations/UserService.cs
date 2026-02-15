@@ -1,9 +1,11 @@
-﻿using System.Security.Claims;
+﻿using System.Net.Mail;
+using System.Security.Claims;
 using System.Security.Cryptography;
 using ClosedXML.Excel;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using UniversityERP.Application.Repositories.Abstractions;
 using UniversityERP.Domain.Entities;
 using UniversityERP.Domain.Enums;
@@ -11,6 +13,7 @@ using UniversityERP.Infrastructure.Dtos;
 using UniversityERP.Infrastructure.Dtos.Common;
 using UniversityERP.Infrastructure.Dtos.UserDtos;
 using UniversityERP.Infrastructure.Dtos.UserDtos.Import;
+using UniversityERP.Infrastructure.EmailTemplates;
 using UniversityERP.Infrastructure.Services.Abstractions;
 
 namespace UniversityERP.Infrastructure.Services.Implementations;
@@ -20,12 +23,17 @@ internal class UserService : IUserService
     private readonly IUserRepository _users;
     private readonly IHttpContextAccessor _http;
     private readonly PasswordHasher<User> _hasher = new();
+    private readonly ILogger<UserService> _logger;
+    private readonly IEmailSender _email;
 
-    public UserService(IUserRepository users, IHttpContextAccessor http)
+    public UserService(IUserRepository users, IHttpContextAccessor http, IEmailSender email, ILogger<UserService> logger)
     {
         _users = users;
         _http = http;
+        _email = email;
+        _logger = logger;
     }
+
     private Guid? CurrentUserId()
     {
         var sub = _http.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier)
@@ -35,49 +43,83 @@ internal class UserService : IUserService
     }
 
     public async Task<ResultDto<UserGetDto>> CreateAsync(UserCreateDto dto)
+{
+    var email = dto.Email.Trim().ToLowerInvariant();
+    var personalEmail = string.IsNullOrWhiteSpace(dto.PersonalEmail)
+        ? null
+        : dto.PersonalEmail.Trim().ToLowerInvariant();
+
+    if (!string.IsNullOrWhiteSpace(personalEmail) && !MailAddress.TryCreate(personalEmail, out _))
     {
-        var email = dto.Email.Trim().ToLower();
-
-        if (await _users.ExistsByEmailAsync(email, ignoreQueryFilter: true))
-        {
-            return new ResultDto<UserGetDto>
-            {
-                StatusCode = 409,
-                IsSucced = false,
-                Message = "Email already exists."
-            };
-        }
-
-        var user = new User
-        {
-            FullName = dto.FullName.Trim(),
-            Email = email,
-            Role = dto.Role,
-            IsActive = dto.IsActive,
-            PositionTitle = string.IsNullOrWhiteSpace(dto.PositionTitle) ? null : dto.PositionTitle.Trim()
-        };
-
-        user.PasswordHash = _hasher.HashPassword(user, dto.Password);
-
-        await _users.AddAsync(user);
-        await _users.SaveChangesAsync();
-
         return new ResultDto<UserGetDto>
         {
-            StatusCode = 201,
-            IsSucced = true,
-            Message = "User created successfully.",
-            Data = new UserGetDto
-            {
-                Id = user.Id,
-                FullName = user.FullName,
-                Email = user.Email,
-                Role = user.Role,
-                IsActive = user.IsActive,
-                PositionTitle = user.PositionTitle
-            }
+            StatusCode = 400,
+            IsSucced = false,
+            Message = "PersonalEmail is not a valid email address."
         };
     }
+
+
+    if (await _users.ExistsByEmailAsync(email, ignoreQueryFilter: true))
+    {
+        return new ResultDto<UserGetDto>
+        {
+            StatusCode = 409,
+            IsSucced = false,
+            Message = "Email already exists."
+        };
+    }
+
+    var tempPassword = GenerateTempPassword();
+
+    var user = new User
+    {
+        FullName = dto.FullName.Trim(),
+        Email = email,
+        PersonalEmail = personalEmail,
+        Role = dto.Role,
+        IsActive = dto.IsActive,
+        PositionTitle = string.IsNullOrWhiteSpace(dto.PositionTitle) ? null : dto.PositionTitle.Trim()
+    };
+
+    user.PasswordHash = _hasher.HashPassword(user, tempPassword);
+
+    await _users.AddAsync(user);
+    await _users.SaveChangesAsync();
+
+    // Send credentials to personal email if provided (Turkey-style onboarding)
+    if (!string.IsNullOrWhiteSpace(user.PersonalEmail))
+    {
+        try
+        {
+            var subject = "Your University Account Credentials";
+            var body = UserEmails.Credentials(user.FullName, user.Email, tempPassword);
+            await _email.SendAsync(user.PersonalEmail, subject, body);
+        }
+        catch(Exception ex)
+        {
+            _logger.LogError(ex, "SMTP send failed to {PersonalEmail}", user.PersonalEmail);
+        }
+    }
+
+    return new ResultDto<UserGetDto>
+    {
+        StatusCode = 201,
+        IsSucced = true,
+        Message = string.IsNullOrWhiteSpace(user.PersonalEmail)
+            ? "User created successfully. PersonalEmail not provided, credentials were not emailed."
+            : "User created successfully. Credentials sent to personal email.",
+        Data = new UserGetDto
+        {
+            Id = user.Id,
+            FullName = user.FullName,
+            Email = user.Email,
+            Role = user.Role,
+            IsActive = user.IsActive,
+            PositionTitle = user.PositionTitle
+        }
+    };
+}
 
     public async Task<ResultDto<PagedResponseDto<UserGetDto>>> GetPagedAsync(int page, int pageSize, string? search,
         UserRole? role, bool? isActive)
@@ -114,6 +156,7 @@ internal class UserService : IUserService
                 FullName = x.FullName,
                 Email = x.Email,
                 Role = x.Role,
+                PersonalEmail = x.PersonalEmail,
                 IsActive = x.IsActive,
                 PositionTitle = x.PositionTitle
             })
@@ -158,6 +201,7 @@ internal class UserService : IUserService
                 Id = user.Id,
                 FullName = user.FullName,
                 Email = user.Email,
+                PersonalEmail = user.PersonalEmail,
                 Role = user.Role,
                 IsActive = user.IsActive,
                 PositionTitle = user.PositionTitle
@@ -240,6 +284,20 @@ internal class UserService : IUserService
 
         _users.Update(user);
         await _users.SaveChangesAsync();
+
+        if (!string.IsNullOrWhiteSpace(user.PersonalEmail))
+        {
+            try
+            {
+                var subject = "Your password has been reset";
+                var body = UserEmails.PasswordReset(user.FullName, dto.NewPassword);
+                await _email.SendAsync(user.PersonalEmail, subject, body);
+            }
+            catch(Exception ex)
+            {
+                _logger.LogError(ex, "SMTP send failed to {PersonalEmail}", user.PersonalEmail);
+            }
+        }
 
         return new ResultDto(200, true, "Password reset successfully.");
     }
@@ -378,7 +436,7 @@ internal class UserService : IUserService
             Message = "Excel file has no data rows."
         };
 
-    // Preload existing emails (ignore query filter so deleted accounts still block duplicates if you want)
+    // Existing emails (ignore query filter so even deleted users block duplicates if you want)
     var existingEmails = await _users.GetAll(ignoreQueryFilter: true)
         .AsNoTracking()
         .Select(x => x.Email)
@@ -389,10 +447,11 @@ internal class UserService : IUserService
 
     var result = new UserImportResultDto { TotalRows = lastRow - 1 };
 
-    var toInsert = new List<(User user, string tempPassword, UserImportRowResultDto rowResult)>();
+    // we keep tempPassword in memory only
+    var toInsert = new List<(User user, string tempPassword, UserImportRowResultDto rr)>();
 
     // Expected headers (row 1):
-    // FullName | Email | Role | IsActive | PositionTitle
+    // FullName | Email | Role | IsActive | PositionTitle | PersonalEmail
     for (int row = 2; row <= lastRow; row++)
     {
         var fullName = ws.Cell(row, 1).GetString()?.Trim() ?? "";
@@ -400,6 +459,7 @@ internal class UserService : IUserService
         var roleRaw = ws.Cell(row, 3).GetString()?.Trim() ?? "";
         var isActiveRaw = ws.Cell(row, 4).GetString()?.Trim() ?? "";
         var positionTitle = ws.Cell(row, 5).GetString()?.Trim();
+        var personalEmailRaw = ws.Cell(row, 6).GetString()?.Trim();
 
         var rr = new UserImportRowResultDto
         {
@@ -407,7 +467,8 @@ internal class UserService : IUserService
             FullName = fullName,
             Email = emailRaw,
             Role = roleRaw,
-            PositionTitle = string.IsNullOrWhiteSpace(positionTitle) ? null : positionTitle
+            PositionTitle = string.IsNullOrWhiteSpace(positionTitle) ? null : positionTitle.Trim(),
+            PersonalEmail = string.IsNullOrWhiteSpace(personalEmailRaw) ? null : personalEmailRaw.Trim()
         };
 
         if (string.IsNullOrWhiteSpace(fullName))
@@ -462,15 +523,32 @@ internal class UserService : IUserService
                 v.Equals("1") ||
                 v.Equals("yes", StringComparison.OrdinalIgnoreCase);
         }
-
         rr.IsActive = isActive;
+
+        // Validate personal email (optional)
+        string? personalEmail = null;
+
+        if (!string.IsNullOrWhiteSpace(personalEmailRaw))
+        {
+            personalEmail = personalEmailRaw.Trim().ToLowerInvariant();
+
+            if (!MailAddress.TryCreate(personalEmail, out _))
+            {
+                rr.Success = false;
+                rr.Error = "PersonalEmail is not a valid email address.";
+                result.Rows.Add(rr);
+                continue;
+            }
+        }
+
 
         var tempPassword = GenerateTempPassword();
 
         var user = new User
         {
-            FullName = fullName,
+            FullName = fullName.Trim(),
             Email = email,
+            PersonalEmail = personalEmail, // ✅ save it
             Role = role,
             IsActive = isActive,
             PositionTitle = rr.PositionTitle
@@ -488,18 +566,46 @@ internal class UserService : IUserService
     if (toInsert.Count > 0)
         await _users.SaveChangesAsync();
 
-    // Fill success rows (with temp passwords)
+    // Build result rows (email if possible)
     foreach (var item in toInsert)
     {
-        item.rowResult.Success = true;
-        item.rowResult.TempPassword = item.tempPassword;
-        result.Rows.Add(item.rowResult);
+        item.rr.Success = true;
+
+        if (!string.IsNullOrWhiteSpace(item.user.PersonalEmail))
+        {
+            try
+            {
+                var subject = "Your University Account Credentials";
+                var body = UserEmails.Credentials(item.user.FullName, item.user.Email, item.tempPassword);
+
+                await _email.SendAsync(item.user.PersonalEmail!, subject, body);
+
+                item.rr.CredentialsEmailed = true;
+                item.rr.TempPassword = null; // ✅ don’t return password if emailed
+            }
+            catch
+            {
+                // If email fails, still created user; return temp password so admin can deliver manually
+                item.rr.CredentialsEmailed = false;
+                item.rr.TempPassword = item.tempPassword;
+                item.rr.Error = "User created but failed to send email (SMTP issue). Temp password returned.";
+
+                _logger.LogError("Failed to send credentials email to {PersonalEmail} for user {Email}", item.user.PersonalEmail, item.user.Email);
+            }
+        }
+        else
+        {
+            // no personal email, admin must deliver manually
+            item.rr.CredentialsEmailed = false;
+            item.rr.TempPassword = item.tempPassword;
+        }
+
+        result.Rows.Add(item.rr);
     }
 
     result.CreatedCount = toInsert.Count;
     result.FailedCount = result.TotalRows - result.CreatedCount;
 
-    // Sort rows by row number so response is readable
     result.Rows = result.Rows.OrderBy(x => x.RowNumber).ToList();
 
     return new ResultDto<UserImportResultDto>
@@ -510,7 +616,4 @@ internal class UserService : IUserService
         Data = result
     };
 }
-
-
-
 }

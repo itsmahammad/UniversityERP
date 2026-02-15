@@ -9,6 +9,7 @@ public class User : BaseAuditableEntity
 
     public string FullName { get; set; } = default!;
     public string Email { get; set; } = default!;
+    public string? PersonalEmail { get; set; }
     public string PasswordHash { get; set; } = default!;
 
     public UserRole Role { get; set; } = UserRole.Student;
