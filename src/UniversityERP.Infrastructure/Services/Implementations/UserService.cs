@@ -708,4 +708,91 @@ internal class UserService : IUserService
         return fin.All(char.IsLetterOrDigit);
     }
 
+    public async Task<ResultDto<UserGetDto>> UpdateAsync(Guid id, UserUpdateDto dto)
+{
+    var user = await _users.GetAsync(x => x.Id == id);
+    if (user is null)
+        return new ResultDto<UserGetDto>
+        {
+            StatusCode = 404,
+            IsSucced = false,
+            Message = "User not found."
+        };
+
+    // Optional: prevent non-superadmin editing superadmin
+    var callerRole = _http.HttpContext?.User?.FindFirstValue(ClaimTypes.Role);
+    var isCallerSuper = string.Equals(callerRole, "SuperAdmin", StringComparison.OrdinalIgnoreCase);
+
+    if (user.Role == UserRole.SuperAdmin && !isCallerSuper)
+        return new ResultDto<UserGetDto>
+        {
+            StatusCode = 403,
+            IsSucced = false,
+            Message = "Only SuperAdmin can update SuperAdmin user."
+        };
+
+    var personalEmail = string.IsNullOrWhiteSpace(dto.PersonalEmail)
+        ? null
+        : dto.PersonalEmail.Trim().ToLowerInvariant();
+
+    if (!string.IsNullOrWhiteSpace(personalEmail) && !MailAddress.TryCreate(personalEmail, out _))
+    {
+        return new ResultDto<UserGetDto>
+        {
+            StatusCode = 400,
+            IsSucced = false,
+            Message = "PersonalEmail is not a valid email address."
+        };
+    }
+
+    user.FullName = dto.FullName.Trim();
+    user.PersonalEmail = personalEmail;
+    user.PositionTitle = string.IsNullOrWhiteSpace(dto.PositionTitle) ? null : dto.PositionTitle.Trim();
+
+    _users.Update(user);
+    await _users.SaveChangesAsync();
+
+    return new ResultDto<UserGetDto>
+    {
+        StatusCode = 200,
+        IsSucced = true,
+        Message = "User updated successfully.",
+        Data = new UserGetDto
+        {
+            Id = user.Id,
+            FullName = user.FullName,
+            Email = user.Email,
+            PersonalEmail = user.PersonalEmail,
+            Role = user.Role,
+            IsActive = user.IsActive,
+            PositionTitle = user.PositionTitle
+        }
+    };
+}
+
+public async Task<ResultDto> DeleteAsync(Guid id)
+{
+    var currentId = CurrentUserId();
+    if (currentId.HasValue && currentId.Value == id)
+        return new ResultDto(400, false, "You cannot delete your own account.");
+
+    var user = await _users.GetAsync(x => x.Id == id);
+    if (user is null)
+        return new ResultDto(404, false, "User not found.");
+
+    // Optional: protect superadmin
+    var callerRole = _http.HttpContext?.User?.FindFirstValue(ClaimTypes.Role);
+    var isCallerSuper = string.Equals(callerRole, "SuperAdmin", StringComparison.OrdinalIgnoreCase);
+
+    if (user.Role == UserRole.SuperAdmin && !isCallerSuper)
+        return new ResultDto(403, false, "Only SuperAdmin can delete SuperAdmin user.");
+
+    // Soft delete via interceptor (mark as Deleted)
+    _users.Delete(user);
+    await _users.SaveChangesAsync();
+
+    return new ResultDto(200, true, "User deleted successfully.");
+}
+
+
 }

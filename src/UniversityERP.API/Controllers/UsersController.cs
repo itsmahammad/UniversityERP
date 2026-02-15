@@ -81,4 +81,19 @@ public class UsersController : ControllerBase
         return StatusCode(result.StatusCode, result);
     }
 
+    [HttpPut("{id:guid}")]
+    public async Task<IActionResult> Update([FromRoute] Guid id, [FromBody] UserUpdateDto dto)
+    {
+        var result = await _users.UpdateAsync(id, dto);
+        return StatusCode(result.StatusCode, result);
+    }
+
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> Delete([FromRoute] Guid id)
+    {
+        var result = await _users.DeleteAsync(id);
+        return StatusCode(result.StatusCode, result);
+    }
+
+
 }

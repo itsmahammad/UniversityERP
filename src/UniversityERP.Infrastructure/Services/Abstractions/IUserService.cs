@@ -32,4 +32,8 @@ public interface IUserService
 
     Task<ResultDto<UserImportResultDto>> ImportUsersFromExcelAsync(IFormFile file);
 
+    Task<ResultDto<UserGetDto>> UpdateAsync(Guid id, UserUpdateDto dto);
+    Task<ResultDto> DeleteAsync(Guid id);
+
+
 }
