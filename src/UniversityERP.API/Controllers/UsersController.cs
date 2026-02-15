@@ -25,6 +25,15 @@ public class UsersController : ControllerBase
         return StatusCode(result.StatusCode, result);
     }
 
+    [HttpPost("import-excel")]
+    [Consumes("multipart/form-data")]
+    public async Task<IActionResult> ImportExcel(IFormFile file)
+    {
+        var result = await _users.ImportUsersFromExcelAsync(file);
+        return StatusCode(result.StatusCode, result);
+    }
+
+
     [HttpGet]
     public async Task<IActionResult> GetPaged(
         [FromQuery] int page = 1,

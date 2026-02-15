@@ -1,7 +1,9 @@
-﻿using UniversityERP.Domain.Enums;
+﻿using Microsoft.AspNetCore.Http;
+using UniversityERP.Domain.Enums;
 using UniversityERP.Infrastructure.Dtos;
 using UniversityERP.Infrastructure.Dtos.Common;
 using UniversityERP.Infrastructure.Dtos.UserDtos;
+using UniversityERP.Infrastructure.Dtos.UserDtos.Import;
 
 namespace UniversityERP.Infrastructure.Services.Abstractions;
 
@@ -27,5 +29,7 @@ public interface IUserService
 
     Task<ResultDto<UserGetDto>> GetMeAsync();
     Task<ResultDto> ChangeMyPasswordAsync(ChangePasswordDto dto);
+
+    Task<ResultDto<UserImportResultDto>> ImportUsersFromExcelAsync(IFormFile file);
 
 }
