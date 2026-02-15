@@ -25,4 +25,7 @@ public interface IUserService
 
     Task<ResultDto> ResetPasswordAsync(Guid id, ResetPasswordDto dto);
 
+    Task<ResultDto<UserGetDto>> GetMeAsync();
+    Task<ResultDto> ChangeMyPasswordAsync(ChangePasswordDto dto);
+
 }

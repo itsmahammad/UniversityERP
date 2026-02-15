@@ -241,4 +241,68 @@ internal class UserService : IUserService
         return new ResultDto(200, true, "Password reset successfully.");
     }
 
+    public async Task<ResultDto<UserGetDto>> GetMeAsync()
+    {
+        var userId = CurrentUserId();
+        if (!userId.HasValue)
+            return new ResultDto<UserGetDto>
+            {
+                StatusCode = 401,
+                IsSucced = false,
+                Message = "Unauthorized."
+            };
+
+
+        var user = await _users.GetAsync(x => x.Id == userId.Value);
+        if (user is null)
+            return new ResultDto<UserGetDto>
+            {
+                StatusCode = 404,
+                IsSucced = false,
+                Message = "User not found."
+            };
+
+
+        return new ResultDto<UserGetDto>
+        {
+            StatusCode = 200,
+            IsSucced = true,
+            Message = "Successfully",
+            Data = new UserGetDto
+            {
+                Id = user.Id,
+                FullName = user.FullName,
+                Email = user.Email,
+                Role = user.Role,
+                IsActive = user.IsActive,
+                PositionTitle = user.PositionTitle
+            }
+        };
+    }
+    public async Task<ResultDto> ChangeMyPasswordAsync(ChangePasswordDto dto)
+    {
+        var userId = CurrentUserId();
+        if (!userId.HasValue)
+            return new ResultDto(401, false, "Unauthorized.");
+
+        var user = await _users.GetAsync(x => x.Id == userId.Value);
+        if (user is null)
+            return new ResultDto(404, false, "User not found.");
+
+        if (!user.IsActive)
+            return new ResultDto(403, false, "Account is inactive.");
+
+        var verify = _hasher.VerifyHashedPassword(user, user.PasswordHash, dto.CurrentPassword);
+        if (verify == PasswordVerificationResult.Failed)
+            return new ResultDto(400, false, "Current password is incorrect.");
+
+        user.PasswordHash = _hasher.HashPassword(user, dto.NewPassword);
+
+        _users.Update(user);
+        await _users.SaveChangesAsync();
+
+        return new ResultDto(200, true, "Password changed successfully.");
+    }
+
+
 }
