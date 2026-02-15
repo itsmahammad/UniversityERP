@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using UniversityERP.Application.Repositories.Abstractions;
 using UniversityERP.Domain.Entities;
 using UniversityERP.Domain.Enums;
@@ -14,6 +15,7 @@ using UniversityERP.Infrastructure.Dtos.Common;
 using UniversityERP.Infrastructure.Dtos.UserDtos;
 using UniversityERP.Infrastructure.Dtos.UserDtos.Import;
 using UniversityERP.Infrastructure.EmailTemplates;
+using UniversityERP.Infrastructure.Options;
 using UniversityERP.Infrastructure.Services.Abstractions;
 
 namespace UniversityERP.Infrastructure.Services.Implementations;
@@ -25,13 +27,15 @@ internal class UserService : IUserService
     private readonly PasswordHasher<User> _hasher = new();
     private readonly ILogger<UserService> _logger;
     private readonly IEmailSender _email;
+    private readonly string _uniEmailDomain;
 
-    public UserService(IUserRepository users, IHttpContextAccessor http, IEmailSender email, ILogger<UserService> logger)
+    public UserService(IUserRepository users, IHttpContextAccessor http, IEmailSender email, ILogger<UserService> logger, IOptions<UniversityEmailOptions> uniEmailOptions)
     {
         _users = users;
         _http = http;
         _email = email;
         _logger = logger;
+        _uniEmailDomain = uniEmailOptions.Value.Domain;
     }
 
     private Guid? CurrentUserId()
@@ -43,83 +47,112 @@ internal class UserService : IUserService
     }
 
     public async Task<ResultDto<UserGetDto>> CreateAsync(UserCreateDto dto)
-{
-    var email = dto.Email.Trim().ToLowerInvariant();
-    var personalEmail = string.IsNullOrWhiteSpace(dto.PersonalEmail)
-        ? null
-        : dto.PersonalEmail.Trim().ToLowerInvariant();
-
-    if (!string.IsNullOrWhiteSpace(personalEmail) && !MailAddress.TryCreate(personalEmail, out _))
     {
+        // Normalize FinCode
+        var fin = dto.FinCode.Trim().ToUpperInvariant();
+
+        // Validate FinCode format and length
+        if (string.IsNullOrWhiteSpace(fin) || fin.Length < 5 || fin.Length > 16)
+        {
+            return new ResultDto<UserGetDto>
+            {
+                StatusCode = 400,
+                IsSucced = false,
+                Message = "FinCode must be between 5 and 16 characters."
+            };
+        }
+
+        // Check FinCode uniqueness (including soft-deleted)
+        if (await _users.ExistsByFinCodeAsync(fin, ignoreQueryFilter: true))
+        {
+            return new ResultDto<UserGetDto>
+            {
+                StatusCode = 409,
+                IsSucced = false,
+                Message = "FinCode already exists."
+            };
+        }
+
+        // Generate university email from FinCode
+        var email = $"{fin}@{_uniEmailDomain}".ToLowerInvariant();
+
+        // Check email uniqueness (including soft-deleted)
+        if (await _users.ExistsByEmailAsync(email, ignoreQueryFilter: true))
+        {
+            return new ResultDto<UserGetDto>
+            {
+                StatusCode = 409,
+                IsSucced = false,
+                Message = "University email already exists."
+            };
+        }
+
+        var personalEmail = string.IsNullOrWhiteSpace(dto.PersonalEmail)
+            ? null
+            : dto.PersonalEmail.Trim().ToLowerInvariant();
+
+        if (!string.IsNullOrWhiteSpace(personalEmail) && !MailAddress.TryCreate(personalEmail, out _))
+        {
+            return new ResultDto<UserGetDto>
+            {
+                StatusCode = 400,
+                IsSucced = false,
+                Message = "PersonalEmail is not a valid email address."
+            };
+        }
+
+        var tempPassword = GenerateTempPassword();
+
+        var user = new User
+        {
+            FinCode = fin,
+            FullName = dto.FullName.Trim(),
+            Email = email,
+            PersonalEmail = personalEmail,
+            Role = dto.Role,
+            IsActive = dto.IsActive,
+            PositionTitle = string.IsNullOrWhiteSpace(dto.PositionTitle) ? null : dto.PositionTitle.Trim()
+        };
+
+        user.PasswordHash = _hasher.HashPassword(user, tempPassword);
+
+        await _users.AddAsync(user);
+        await _users.SaveChangesAsync();
+
+        // Send credentials to personal email if provided
+        if (!string.IsNullOrWhiteSpace(user.PersonalEmail))
+        {
+            try
+            {
+                var subject = "Your University Account Credentials";
+                var body = UserEmails.Credentials(user.FullName, user.Email, tempPassword);
+                await _email.SendAsync(user.PersonalEmail, subject, body);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "SMTP send failed to {PersonalEmail}", user.PersonalEmail);
+            }
+        }
+
         return new ResultDto<UserGetDto>
         {
-            StatusCode = 400,
-            IsSucced = false,
-            Message = "PersonalEmail is not a valid email address."
+            StatusCode = 201,
+            IsSucced = true,
+            Message = string.IsNullOrWhiteSpace(user.PersonalEmail)
+                ? "User created successfully. PersonalEmail not provided, credentials were not emailed."
+                : "User created successfully. Credentials sent to personal email.",
+            Data = new UserGetDto
+            {
+                Id = user.Id,
+                FullName = user.FullName,
+                Email = user.Email,
+                PersonalEmail = user.PersonalEmail,
+                Role = user.Role,
+                IsActive = user.IsActive,
+                PositionTitle = user.PositionTitle
+            }
         };
     }
-
-
-    if (await _users.ExistsByEmailAsync(email, ignoreQueryFilter: true))
-    {
-        return new ResultDto<UserGetDto>
-        {
-            StatusCode = 409,
-            IsSucced = false,
-            Message = "Email already exists."
-        };
-    }
-
-    var tempPassword = GenerateTempPassword();
-
-    var user = new User
-    {
-        FullName = dto.FullName.Trim(),
-        Email = email,
-        PersonalEmail = personalEmail,
-        Role = dto.Role,
-        IsActive = dto.IsActive,
-        PositionTitle = string.IsNullOrWhiteSpace(dto.PositionTitle) ? null : dto.PositionTitle.Trim()
-    };
-
-    user.PasswordHash = _hasher.HashPassword(user, tempPassword);
-
-    await _users.AddAsync(user);
-    await _users.SaveChangesAsync();
-
-    // Send credentials to personal email if provided (Turkey-style onboarding)
-    if (!string.IsNullOrWhiteSpace(user.PersonalEmail))
-    {
-        try
-        {
-            var subject = "Your University Account Credentials";
-            var body = UserEmails.Credentials(user.FullName, user.Email, tempPassword);
-            await _email.SendAsync(user.PersonalEmail, subject, body);
-        }
-        catch(Exception ex)
-        {
-            _logger.LogError(ex, "SMTP send failed to {PersonalEmail}", user.PersonalEmail);
-        }
-    }
-
-    return new ResultDto<UserGetDto>
-    {
-        StatusCode = 201,
-        IsSucced = true,
-        Message = string.IsNullOrWhiteSpace(user.PersonalEmail)
-            ? "User created successfully. PersonalEmail not provided, credentials were not emailed."
-            : "User created successfully. Credentials sent to personal email.",
-        Data = new UserGetDto
-        {
-            Id = user.Id,
-            FullName = user.FullName,
-            Email = user.Email,
-            Role = user.Role,
-            IsActive = user.IsActive,
-            PositionTitle = user.PositionTitle
-        }
-    };
-}
 
     public async Task<ResultDto<PagedResponseDto<UserGetDto>>> GetPagedAsync(int page, int pageSize, string? search,
         UserRole? role, bool? isActive)
@@ -334,6 +367,7 @@ internal class UserService : IUserService
                 Id = user.Id,
                 FullName = user.FullName,
                 Email = user.Email,
+                PersonalEmail = user.PersonalEmail,
                 Role = user.Role,
                 IsActive = user.IsActive,
                 PositionTitle = user.PositionTitle
@@ -436,14 +470,20 @@ internal class UserService : IUserService
             Message = "Excel file has no data rows."
         };
 
-    // Existing emails (ignore query filter so even deleted users block duplicates if you want)
+    // Existing FinCodes and Emails (ignore query filter so even deleted users block duplicates)
+    var existingFinCodes = await _users.GetAll(ignoreQueryFilter: true)
+        .AsNoTracking()
+        .Select(x => x.FinCode)
+        .ToListAsync();
+
     var existingEmails = await _users.GetAll(ignoreQueryFilter: true)
         .AsNoTracking()
         .Select(x => x.Email)
         .ToListAsync();
 
-    var existingSet = new HashSet<string>(existingEmails, StringComparer.OrdinalIgnoreCase);
-    var seenInFile = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+    var existingFinSet = new HashSet<string>(existingFinCodes, StringComparer.OrdinalIgnoreCase);
+    var existingEmailSet = new HashSet<string>(existingEmails, StringComparer.OrdinalIgnoreCase);
+    var seenFinInFile = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
     var result = new UserImportResultDto { TotalRows = lastRow - 1 };
 
@@ -451,25 +491,78 @@ internal class UserService : IUserService
     var toInsert = new List<(User user, string tempPassword, UserImportRowResultDto rr)>();
 
     // Expected headers (row 1):
-    // FullName | Email | Role | IsActive | PositionTitle | PersonalEmail
+    // FinCode | FullName | PersonalEmail | Role | IsActive | PositionTitle
     for (int row = 2; row <= lastRow; row++)
     {
-        var fullName = ws.Cell(row, 1).GetString()?.Trim() ?? "";
-        var emailRaw = ws.Cell(row, 2).GetString()?.Trim() ?? "";
-        var roleRaw = ws.Cell(row, 3).GetString()?.Trim() ?? "";
-        var isActiveRaw = ws.Cell(row, 4).GetString()?.Trim() ?? "";
-        var positionTitle = ws.Cell(row, 5).GetString()?.Trim();
-        var personalEmailRaw = ws.Cell(row, 6).GetString()?.Trim();
+        var finCodeRaw = ws.Cell(row, 1).GetString()?.Trim() ?? "";
+        var fullName = ws.Cell(row, 2).GetString()?.Trim() ?? "";
+        var personalEmailRaw = ws.Cell(row, 3).GetString()?.Trim();
+        var roleRaw = ws.Cell(row, 4).GetString()?.Trim() ?? "";
+        var isActiveRaw = ws.Cell(row, 5).GetString()?.Trim() ?? "";
+        var positionTitle = ws.Cell(row, 6).GetString()?.Trim();
 
         var rr = new UserImportRowResultDto
         {
             RowNumber = row,
             FullName = fullName,
-            Email = emailRaw,
+            Email = "", // Will be generated
             Role = roleRaw,
             PositionTitle = string.IsNullOrWhiteSpace(positionTitle) ? null : positionTitle.Trim(),
             PersonalEmail = string.IsNullOrWhiteSpace(personalEmailRaw) ? null : personalEmailRaw.Trim()
         };
+
+        if (string.IsNullOrWhiteSpace(finCodeRaw))
+        {
+            rr.Success = false;
+            rr.Error = "FinCode is required.";
+            result.Rows.Add(rr);
+            continue;
+        }
+
+        var fin = finCodeRaw.Trim().ToUpperInvariant();
+
+        if (string.IsNullOrWhiteSpace(fin))
+        {
+            rr.Success = false;
+            rr.Error = "FinCode is required.";
+            result.Rows.Add(rr);
+            continue;
+        }
+
+        if (!IsValidFinCode(fin))
+        {
+            rr.Success = false;
+            rr.Error = "FinCode must be 5-16 alphanumeric characters.";
+            result.Rows.Add(rr);
+            continue;
+        }
+
+        // Validate FinCode length
+        if (fin.Length < 5 || fin.Length > 16)
+        {
+            rr.Success = false;
+            rr.Error = "FinCode must be between 5 and 16 characters.";
+            result.Rows.Add(rr);
+            continue;
+        }
+
+        // Check FinCode duplicates in file
+        if (!seenFinInFile.Add(fin))
+        {
+            rr.Success = false;
+            rr.Error = "Duplicate FinCode in file.";
+            result.Rows.Add(rr);
+            continue;
+        }
+
+        // Check FinCode duplicates in DB
+        if (existingFinSet.Contains(fin))
+        {
+            rr.Success = false;
+            rr.Error = "FinCode already exists in database.";
+            result.Rows.Add(rr);
+            continue;
+        }
 
         if (string.IsNullOrWhiteSpace(fullName))
         {
@@ -479,28 +572,15 @@ internal class UserService : IUserService
             continue;
         }
 
-        if (string.IsNullOrWhiteSpace(emailRaw))
+        // Generate university email from FinCode
+        var email = $"{fin}@{_uniEmailDomain}".ToLowerInvariant();
+        rr.Email = email;
+
+        // Check email uniqueness
+        if (existingEmailSet.Contains(email))
         {
             rr.Success = false;
-            rr.Error = "Email is required.";
-            result.Rows.Add(rr);
-            continue;
-        }
-
-        var email = emailRaw.Trim().ToLowerInvariant();
-
-        if (!seenInFile.Add(email))
-        {
-            rr.Success = false;
-            rr.Error = "Duplicate email in file.";
-            result.Rows.Add(rr);
-            continue;
-        }
-
-        if (existingSet.Contains(email))
-        {
-            rr.Success = false;
-            rr.Error = "Email already exists in database.";
+            rr.Error = "Generated email already exists in database.";
             result.Rows.Add(rr);
             continue;
         }
@@ -541,14 +621,14 @@ internal class UserService : IUserService
             }
         }
 
-
         var tempPassword = GenerateTempPassword();
 
         var user = new User
         {
+            FinCode = fin,
             FullName = fullName.Trim(),
             Email = email,
-            PersonalEmail = personalEmail, // ✅ save it
+            PersonalEmail = personalEmail,
             Role = role,
             IsActive = isActive,
             PositionTitle = rr.PositionTitle
@@ -616,4 +696,16 @@ internal class UserService : IUserService
         Data = result
     };
 }
+    private static bool IsValidFinCode(string fin)
+    {
+        if (string.IsNullOrWhiteSpace(fin)) return false;
+
+        fin = fin.Trim();
+
+        if (fin.Length < 5 || fin.Length > 16) return false;
+
+        // alphanumeric only
+        return fin.All(char.IsLetterOrDigit);
+    }
+
 }

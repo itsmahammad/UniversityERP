@@ -30,4 +30,27 @@ internal class UserRepository : Repository<User>, IUserRepository
 
         return q.AnyAsync();
     }
+
+    public Task<User?> GetByFinCodeAsync(string finCode, bool ignoreQueryFilter = false)
+    {
+        var fin = finCode.Trim().ToUpperInvariant();
+        return GetAll(ignoreQueryFilter)
+            .FirstOrDefaultAsync(x => x.FinCode.ToUpper() == fin);
+    }
+
+    public Task<bool> ExistsByFinCodeAsync(string finCode, Guid? excludeId = null, bool ignoreQueryFilter = false)
+    {
+        var fin = finCode.Trim().ToUpperInvariant();
+
+        var q = GetAll(ignoreQueryFilter)
+            .AsNoTracking()
+            .Where(x => x.FinCode.ToUpper() == fin);
+
+        if (excludeId.HasValue)
+            q = q.Where(x => x.Id != excludeId.Value);
+
+        return q.AnyAsync();
+    }
+
+
 }

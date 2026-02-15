@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿﻿using Microsoft.EntityFrameworkCore;
 using UniversityERP.Application.Interceptors;
 using UniversityERP.Domain.Entities;
 
@@ -29,4 +29,5 @@ internal class AppDbContext : DbContext
     }
 
     public DbSet<Faculty> Faculties { get; set; }
+    public DbSet<User> Users { get; set; }
 }

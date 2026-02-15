@@ -1,4 +1,4 @@
-﻿using FluentValidation;
+﻿﻿using FluentValidation;
 using FluentValidation.AspNetCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,6 +17,8 @@ public static class InfrastructureServiceRegistration
     {
         services.Configure<JwtOptions>(config.GetSection("Jwt"));
 
+        services.Configure<UniversityEmailOptions>(config.GetSection("UniversityEmail"));
+
         services.Configure<EmailOptions>(config.GetSection("Email"));
         services.AddScoped<IEmailSender, SmtpEmailSender>();
 
@@ -30,5 +32,6 @@ public static class InfrastructureServiceRegistration
         services.AddValidatorsFromAssemblyContaining<UserCreateDtoValidator>();
 
         services.AddScoped<IUserService, UserService>();
+        services.AddScoped<IFacultyService, FacultyService>();
     }
 }

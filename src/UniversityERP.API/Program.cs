@@ -117,12 +117,14 @@ public class Program
         var userRepo = scope.ServiceProvider.GetRequiredService<UniversityERP.Application.Repositories.Abstractions.IUserRepository>();
 
         var adminEmail = "superadmin@uni.local";
+        var adminFinCode = "ADMIN01";
 
         var exists = await userRepo.ExistsByEmailAsync(adminEmail, ignoreQueryFilter: true);
         if (exists) return;
 
         var admin = new UniversityERP.Domain.Entities.User
         {
+            FinCode = adminFinCode,
             FullName = "Super Admin",
             Email = adminEmail,
             Role = UserRole.SuperAdmin,

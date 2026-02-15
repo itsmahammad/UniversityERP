@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿﻿using Microsoft.AspNetCore.Identity;
 using UniversityERP.Application.Repositories.Abstractions;
 using UniversityERP.Domain.Entities;
 using UniversityERP.Infrastructure.Dtos;
@@ -28,7 +28,18 @@ internal class AuthService : IAuthService
                 Message = "Email and password are required."
             };
 
-        var user = await _users.GetByEmailAsync(dto.Email);
+        User? user = null;
+
+        // If identifier contains '@', treat as email; otherwise treat as FinCode
+        if (dto.Email.Contains('@'))
+        {
+            user = await _users.GetByEmailAsync(dto.Email);
+        }
+        else
+        {
+            user = await _users.GetByFinCodeAsync(dto.Email);
+        }
+
         if (user is null || !user.IsActive)
             return new ResultDto<LoginResponseDto>
             {
