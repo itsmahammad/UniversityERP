@@ -2,5 +2,8 @@
 
 public class FacultyUpdateDto
 {
-    public string Name { get; set; } = null!;
+    public Guid Id { get; set; }
+    public string Name { get; set; } = default!;
+    public string Code { get; set; } = default!;
+    public bool IsActive { get; set; }
 }

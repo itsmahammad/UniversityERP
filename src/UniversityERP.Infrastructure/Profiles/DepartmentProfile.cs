@@ -1,21 +1,21 @@
 ﻿using AutoMapper;
 using UniversityERP.Domain.Entities;
-using UniversityERP.Infrastructure.Dtos.FacultyDtos;
+using UniversityERP.Infrastructure.Dtos.DepartmentDtos;
 
 namespace UniversityERP.Infrastructure.Profiles;
 
-public class FacultyProfile : Profile
+public class DepartmentProfile : Profile
 {
-    public FacultyProfile()
+    public DepartmentProfile()
     {
-        CreateMap<FacultyCreateDto, Faculty>()
+        CreateMap<DepartmentCreateDto, Department>()
             .ForMember(d => d.Name, o => o.MapFrom(s => s.Name.Trim()))
             .ForMember(d => d.Code, o => o.MapFrom(s => s.Code.Trim().ToUpperInvariant()));
 
-        CreateMap<FacultyUpdateDto, Faculty>()
+        CreateMap<DepartmentUpdateDto, Department>()
             .ForMember(d => d.Name, o => o.MapFrom(s => s.Name.Trim()))
             .ForMember(d => d.Code, o => o.MapFrom(s => s.Code.Trim().ToUpperInvariant()));
 
-        CreateMap<Faculty, FacultyGetDto>();
+        CreateMap<Department, DepartmentGetDto>();
     }
 }

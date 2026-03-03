@@ -3,10 +3,11 @@ using UniversityERP.Infrastructure.Dtos.FacultyDtos;
 
 namespace UniversityERP.Infrastructure.Validators.FacultyValidators;
 
-public class FacultyCreateDtoValidator : AbstractValidator<FacultyCreateDto>
+public class FacultyUpdateDtoValidator : AbstractValidator<FacultyUpdateDto>
 {
-    public FacultyCreateDtoValidator()
+    public FacultyUpdateDtoValidator()
     {
+        RuleFor(x => x.Id).NotEmpty();
         RuleFor(x => x.Name).NotEmpty().MaximumLength(200);
         RuleFor(x => x.Code)
             .NotEmpty()
