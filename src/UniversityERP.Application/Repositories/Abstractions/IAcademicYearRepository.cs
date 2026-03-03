@@ -3,8 +3,7 @@ using UniversityERP.Domain.Entities;
 
 namespace UniversityERP.Application.Repositories.Abstractions;
 
-public interface IFacultyRepository : IRepository<Faculty>
+public interface IAcademicYearRepository : IRepository<AcademicYear>
 {
     Task<bool> ExistsByNameAsync(string name, Guid? excludeId = null, bool ignoreQueryFilter = false);
-    Task<bool> ExistsByCodeAsync(Guid facultyId, string code, Guid? excludeId = null, bool ignoreQueryFilter = false);
 }

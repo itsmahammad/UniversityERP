@@ -6,20 +6,18 @@ using UniversityERP.Domain.Entities;
 
 namespace UniversityERP.Application.Repositories.Implementations;
 
-internal class FacultyRepository(AppDbContext _context) : Repository<Faculty>(_context), IFacultyRepository
+internal class DepartmentRepository(AppDbContext _context) : Repository<Department>(_context), IDepartmentRepository
 {
-    public Task<bool> ExistsByNameAsync(string name, Guid? excludeId = null, bool ignoreQueryFilter = false)
+    public async Task<bool> ExistsByNameAsync(Guid facultyId, string name, Guid? excludeId = null, bool ignoreQueryFilter = false)
     {
-        var clean = name.Trim();
+        var query = ignoreQueryFilter ? _context.Departments.IgnoreQueryFilters() : _context.Departments;
 
-        var query = GetAll(ignoreQueryFilter)
-            .AsNoTracking()
-            .Where(x => x.Name == clean);
+        name = name.Trim().ToLowerInvariant();
 
-        if (excludeId.HasValue)
-            query = query.Where(x => x.Id != excludeId.Value);
-
-        return query.AnyAsync();
+        return await query.AnyAsync(x =>
+            x.FacultyId == facultyId &&
+            x.Name.ToLower() == name &&
+            (!excludeId.HasValue || x.Id != excludeId.Value));
     }
 
     public async Task<bool> ExistsByCodeAsync(Guid facultyId, string code, Guid? excludeId = null, bool ignoreQueryFilter = false)

@@ -25,6 +25,10 @@ public static class ApplicationServiceRegistration
         });
 
         services.AddScoped<IFacultyRepository, FacultyRepository>();
+        services.AddScoped<IDepartmentRepository, DepartmentRepository>();
+        services.AddScoped<IAcademicProgramRepository, AcademicProgramRepository>();
+        services.AddScoped<IAcademicYearRepository, AcademicYearRepository>();
+        services.AddScoped<ISemesterRepository, SemesterRepository>();
         services.AddScoped<IUserRepository, UserRepository>();
     }
 }
