@@ -11,120 +11,96 @@ namespace UniversityERP.Infrastructure.Services.Implementations;
 internal class FacultyService : IFacultyService
 {
     private readonly IMapper _mapper;
-    private readonly IFacultyRepository _repository;
+    private readonly IFacultyRepository _faculties;
 
-    public FacultyService(IMapper mapper, IFacultyRepository repository)
+    public FacultyService(IMapper mapper, IFacultyRepository faculties)
     {
         _mapper = mapper;
-        _repository = repository;
+        _faculties = faculties;
     }
 
     public async Task<ResultDto> CreateAsync(FacultyCreateDto dto)
     {
-        // Validation (FluentValidation also runs, but keep this safe)
-        if (string.IsNullOrWhiteSpace(dto.Name))
-            return new ResultDto(400, false, "Name is required.");
-
-        var name = dto.Name.Trim();
-
-        // Check uniqueness (query filter applies, so it checks only not-deleted)
-        var exists = await _repository.ExistsByNameAsync(name);
-        if (exists)
+        if (await _faculties.ExistsByNameAsync(dto.Name, ignoreQueryFilter: true))
             return new ResultDto(409, false, "Faculty name already exists.");
 
-        var entity = _mapper.Map<Faculty>(dto);
-        entity.Name = name;
+        if (await _faculties.ExistsByCodeAsync(dto.Code, ignoreQueryFilter: true))
+            return new ResultDto(409, false, "Faculty code already exists.");
 
-        await _repository.AddAsync(entity);
-        await _repository.SaveChangesAsync();
+        var entity = _mapper.Map<Faculty>(dto);
+
+        await _faculties.AddAsync(entity);
+        await _faculties.SaveChangesAsync();
 
         return new ResultDto(201, true, "Faculty created successfully.");
     }
 
+    public async Task<ResultDto> UpdateAsync(FacultyUpdateDto dto)
+    {
+        var entity = await _faculties.GetAsync(x => x.Id == dto.Id);
+        if (entity is null)
+            return new ResultDto(404, false, "Faculty not found.");
+
+        if (await _faculties.ExistsByNameAsync(dto.Name, dto.Id, ignoreQueryFilter: true))
+            return new ResultDto(409, false, "Faculty name already exists.");
+
+        if (await _faculties.ExistsByCodeAsync(dto.Code, dto.Id, ignoreQueryFilter: true))
+            return new ResultDto(409, false, "Faculty code already exists.");
+
+        _mapper.Map(dto, entity);
+        _faculties.Update(entity);
+        await _faculties.SaveChangesAsync();
+
+        return new ResultDto(200, true, "Faculty updated successfully.");
+    }
+
+    public async Task<ResultDto> DeleteAsync(Guid id)
+    {
+        var entity = await _faculties.GetAsync(x => x.Id == id);
+        if (entity is null)
+            return new ResultDto(404, false, "Faculty not found.");
+
+        _faculties.Delete(entity);
+        await _faculties.SaveChangesAsync();
+
+        return new ResultDto(200, true, "Faculty deleted successfully.");
+    }
+
     public async Task<ResultDto<List<FacultyGetDto>>> GetAllAsync()
     {
-        var entities = await _repository
-            .GetAll()
+        var list = await _faculties.GetAll()
             .AsNoTracking()
             .OrderBy(x => x.Name)
             .ToListAsync();
 
-        var data = _mapper.Map<List<FacultyGetDto>>(entities);
-
         return new ResultDto<List<FacultyGetDto>>
         {
-            Data = data,
             StatusCode = 200,
             IsSucced = true,
-            Message = "Successfully"
+            Message = "Successfully",
+            Data = _mapper.Map<List<FacultyGetDto>>(list)
         };
     }
 
     public async Task<ResultDto<FacultyGetDto>> GetByIdAsync(Guid id)
     {
-        // IMPORTANT: FindAsync can bypass query filters, so prefer GetAsync with filter-aware query
-        var entity = await _repository.GetAsync(x => x.Id == id);
+        var entity = await _faculties.GetAsync(x => x.Id == id);
         if (entity is null)
+        {
             return new ResultDto<FacultyGetDto>
             {
-                Data = null,
                 StatusCode = 404,
                 IsSucced = false,
                 Message = "Faculty not found."
             };
-
-        var data = _mapper.Map<FacultyGetDto>(entity);
+        }
 
         return new ResultDto<FacultyGetDto>
         {
-            Data = data,
             StatusCode = 200,
             IsSucced = true,
-            Message = "Successfully"
+            Message = "Successfully",
+            Data = _mapper.Map<FacultyGetDto>(entity)
         };
-    }
-
-    public async Task<ResultDto> UpdateAsync(Guid id, FacultyUpdateDto dto)
-    {
-        if (id == Guid.Empty)
-            return new ResultDto(400, false, "Invalid id.");
-
-        if (string.IsNullOrWhiteSpace(dto.Name))
-            return new ResultDto(400, false, "Name is required.");
-
-        var entity = await _repository.GetAsync(x => x.Id == id);
-        if (entity is null)
-            return new ResultDto(404, false, "Faculty not found.");
-
-        var name = dto.Name.Trim();
-
-        var exists = await _repository.ExistsByNameAsync(name, excludeId: id);
-        if (exists)
-            return new ResultDto(409, false, "Faculty name already exists.");
-
-        entity.Name = name;
-
-        _repository.Update(entity);
-        await _repository.SaveChangesAsync();
-
-        return new ResultDto(200, true, "Faculty updated successfully.");
-    }
-
-
-    public async Task<ResultDto> DeleteAsync(Guid id)
-    {
-        if (id == Guid.Empty)
-            return new ResultDto(400, false, "Invalid id.");
-
-        var entity = await _repository.GetAsync(x => x.Id == id);
-        if (entity is null)
-            return new ResultDto(404, false, "Faculty not found.");
-
-        // This triggers your SaveChangesInterceptor:
-        // Deleted -> IsDeleted=true, UpdatedAt, UpdatedBy, state=Modified
-        _repository.Delete(entity);
-        await _repository.SaveChangesAsync();
-
-        return new ResultDto(200, true, "Faculty deleted successfully.");
     }
 }

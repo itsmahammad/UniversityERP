@@ -5,7 +5,6 @@ using Microsoft.Extensions.DependencyInjection;
 using UniversityERP.Infrastructure.Options;
 using UniversityERP.Infrastructure.Services.Abstractions;
 using UniversityERP.Infrastructure.Services.Implementations;
-using UniversityERP.Infrastructure.Validators.FacultyValidators;
 using UniversityERP.Infrastructure.Validators.UserValidators;
 
 namespace UniversityERP.Infrastructure.ServiceRegistrations;
@@ -33,5 +32,9 @@ public static class InfrastructureServiceRegistration
 
         services.AddScoped<IUserService, UserService>();
         services.AddScoped<IFacultyService, FacultyService>();
+        services.AddScoped<IDepartmentService, DepartmentService>();
+        services.AddScoped<IAcademicProgramService, AcademicProgramService>();
+        services.AddScoped<IAcademicYearService, AcademicYearService>();
+        services.AddScoped<ISemesterService, SemesterService>();
     }
 }

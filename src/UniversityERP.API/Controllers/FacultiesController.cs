@@ -32,12 +32,12 @@ public class FacultiesController(IFacultyService _service) : ControllerBase
         return StatusCode(result.StatusCode, result);
     }
 
-    [HttpPut("{id:guid}")]
-    public async Task<IActionResult> Update([FromRoute] Guid id, [FromBody] FacultyUpdateDto dto)
-    {
-        var result = await _service.UpdateAsync(id, dto);
-        return StatusCode(result.StatusCode, result);
-    }
+    // [HttpPut("{id:guid}")]
+    // public async Task<IActionResult> Update([FromRoute] Guid id, [FromBody] FacultyUpdateDto dto)
+    // {
+    //     var result = await _service.UpdateAsync(id, dto);
+    //     return StatusCode(result.StatusCode, result);
+    // }
 
 
     [HttpDelete("{id:guid}")]

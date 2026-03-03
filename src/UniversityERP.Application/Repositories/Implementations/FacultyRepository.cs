@@ -10,11 +10,11 @@ internal class FacultyRepository(AppDbContext _context) : Repository<Faculty>(_c
 {
     public Task<bool> ExistsByNameAsync(string name, Guid? excludeId = null, bool ignoreQueryFilter = false)
     {
-        var clean = name.Trim();
+        var clean = name.Trim().ToLowerInvariant();
 
         var query = GetAll(ignoreQueryFilter)
             .AsNoTracking()
-            .Where(x => x.Name == clean);
+            .Where(x => x.Name.ToLower() == clean);
 
         if (excludeId.HasValue)
             query = query.Where(x => x.Id != excludeId.Value);
@@ -22,15 +22,17 @@ internal class FacultyRepository(AppDbContext _context) : Repository<Faculty>(_c
         return query.AnyAsync();
     }
 
-    public async Task<bool> ExistsByCodeAsync(Guid facultyId, string code, Guid? excludeId = null, bool ignoreQueryFilter = false)
+    public Task<bool> ExistsByCodeAsync(string code, Guid? excludeId = null, bool ignoreQueryFilter = false)
     {
-        var query = ignoreQueryFilter ? _context.Departments.IgnoreQueryFilters() : _context.Departments;
+        var clean = code.Trim().ToLowerInvariant();
 
-        code = code.Trim().ToLowerInvariant();
+        var query = GetAll(ignoreQueryFilter)
+            .AsNoTracking()
+            .Where(x => x.Code.ToLower() == clean);
 
-        return await query.AnyAsync(x =>
-            x.FacultyId == facultyId &&
-            x.Code.ToLower() == code &&
-            (!excludeId.HasValue || x.Id != excludeId.Value));
+        if (excludeId.HasValue)
+            query = query.Where(x => x.Id != excludeId.Value);
+
+        return query.AnyAsync();
     }
 }
