@@ -4,9 +4,9 @@ using UniversityERP.Domain.Entities;
 
 namespace UniversityERP.Application.Configurations;
 
-public class FacultyConfiguration : IEntityTypeConfiguration<Faculty>
+public class DepartmentConfiguration : IEntityTypeConfiguration<Department>
 {
-    public void Configure(EntityTypeBuilder<Faculty> b)
+    public void Configure(EntityTypeBuilder<Department> b)
     {
         b.HasKey(x => x.Id);
 
@@ -16,23 +16,23 @@ public class FacultyConfiguration : IEntityTypeConfiguration<Faculty>
 
         b.Property(x => x.Code)
             .IsRequired()
-            .HasMaxLength(20);
+            .HasMaxLength(30);
 
         b.Property(x => x.IsActive)
             .IsRequired();
 
         b.HasQueryFilter(x => !x.IsDeleted);
 
-        b.HasMany(x => x.Departments)
-            .WithOne(x => x.Faculty)
-            .HasForeignKey(x => x.FacultyId)
+        b.HasMany(x => x.AcademicPrograms)
+            .WithOne(x => x.Department)
+            .HasForeignKey(x => x.DepartmentId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        b.HasIndex(x => x.Name)
+        b.HasIndex(x => new { x.FacultyId, x.Name })
             .IsUnique()
             .HasFilter("\"IsDeleted\" = false");
 
-        b.HasIndex(x => x.Code)
+        b.HasIndex(x => new { x.FacultyId, x.Code })
             .IsUnique()
             .HasFilter("\"IsDeleted\" = false");
     }

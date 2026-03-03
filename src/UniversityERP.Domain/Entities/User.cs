@@ -5,8 +5,6 @@ namespace UniversityERP.Domain.Entities;
 
 public class User : BaseAuditableEntity
 {
-    public Guid Id { get; set; } = Guid.NewGuid();
-
     public string FinCode { get; set; } = default!;
     public string FullName { get; set; } = default!;
     public string Email { get; set; } = default!;

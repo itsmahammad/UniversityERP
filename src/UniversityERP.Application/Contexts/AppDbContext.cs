@@ -28,6 +28,10 @@ internal class AppDbContext : DbContext
         base.OnConfiguring(optionsBuilder);
     }
 
-    public DbSet<Faculty> Faculties { get; set; }
+    public DbSet<Faculty> Faculties => Set<Faculty>();
+    public DbSet<Department> Departments => Set<Department>();
+    public DbSet<AcademicProgram> AcademicPrograms => Set<AcademicProgram>();
+    public DbSet<AcademicYear> AcademicYears => Set<AcademicYear>();
+    public DbSet<Semester> Semesters => Set<Semester>();
     public DbSet<User> Users { get; set; }
 }
