@@ -12,4 +12,7 @@ public class Department : BaseAuditableEntity
     public Faculty Faculty { get; set; } = default!;
 
     public ICollection<AcademicProgram> AcademicPrograms { get; set; } = new List<AcademicProgram>();
+
+    public ICollection<Teacher> Teachers { get; set; } = new List<Teacher>();
+    public ICollection<AcademicCourse> OwningCourses { get; set; } = new List<AcademicCourse>();
 }

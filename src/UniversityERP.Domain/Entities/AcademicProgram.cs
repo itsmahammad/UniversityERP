@@ -12,4 +12,6 @@ public class AcademicProgram : BaseAuditableEntity
 
     public Guid DepartmentId { get; set; }
     public Department Department { get; set; } = default!;
+
+    public ICollection<Student> Students { get; set; } = new List<Student>();
 }
