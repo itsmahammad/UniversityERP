@@ -15,4 +15,6 @@ public class AcademicCourse : BaseAuditableEntity
     public bool IsActive { get; set; } = true;
 
     public ICollection<ProgramCourse> ProgramCourses { get; set; } = new List<ProgramCourse>();
+    public ICollection<CoursePrerequisite> CoursePrerequisites { get; set; } = new List<CoursePrerequisite>();
+    public ICollection<CoursePrerequisite> RequiredForCourses { get; set; } = new List<CoursePrerequisite>();
 }
