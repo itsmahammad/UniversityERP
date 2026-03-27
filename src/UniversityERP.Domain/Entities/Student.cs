@@ -13,4 +13,6 @@ public class Student : BaseAuditableEntity
 
     public int EnrollmentYear { get; set; }
     public StudentStatus Status { get; set; } = StudentStatus.Active;
+
+    public ICollection<StudentSemesterEnrollment> StudentSemesterEnrollments { get; set; } = new List<StudentSemesterEnrollment>();
 }

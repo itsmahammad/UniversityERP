@@ -40,4 +40,5 @@ internal class AppDbContext : DbContext
     public DbSet<ProgramCourse> ProgramCourses => Set<ProgramCourse>();
     public DbSet<CoursePrerequisite> CoursePrerequisites => Set<CoursePrerequisite>();
     public DbSet<CourseOffering> CourseOfferings => Set<CourseOffering>();
+    public DbSet<StudentSemesterEnrollment> StudentSemesterEnrollments => Set<StudentSemesterEnrollment>();
 }

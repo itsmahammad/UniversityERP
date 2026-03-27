@@ -23,4 +23,5 @@ public class Semester : BaseAuditableEntity
     public bool IsActive { get; set; } = true;
 
     public ICollection<CourseOffering> CourseOfferings { get; set; } = new List<CourseOffering>();
+    public ICollection<StudentSemesterEnrollment> StudentSemesterEnrollments { get; set; } = new List<StudentSemesterEnrollment>();
 }
