@@ -45,5 +45,6 @@ public static class InfrastructureServiceRegistration
         services.AddScoped<IStudentSemesterEnrollmentService, StudentSemesterEnrollmentService>();
         services.AddScoped<IEnrollmentCourseService, EnrollmentCourseService>();
         services.AddScoped<IExamService, ExamService>();
+        services.AddScoped<IExamResultService, ExamResultService>();
     }
 }

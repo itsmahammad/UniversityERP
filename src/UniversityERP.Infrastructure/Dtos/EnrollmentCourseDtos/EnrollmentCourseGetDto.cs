@@ -17,4 +17,7 @@ public class EnrollmentCourseGetDto
     public EnrollmentCourseStatus Status { get; set; }
     public DateTime EnrolledAt { get; set; }
     public DateTime? DroppedAt { get; set; }
+    public decimal? FinalNumericScore { get; set; }
+    public string? LetterGrade { get; set; }
+    public decimal? GradePoint { get; set; }
 }

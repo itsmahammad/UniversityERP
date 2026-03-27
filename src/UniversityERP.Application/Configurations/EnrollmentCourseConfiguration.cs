@@ -22,6 +22,15 @@ public class EnrollmentCourseConfiguration : IEntityTypeConfiguration<Enrollment
         b.Property(x => x.EnrolledAt)
             .IsRequired();
 
+        b.Property(x => x.FinalNumericScore)
+            .HasColumnType("numeric(5,2)");
+
+        b.Property(x => x.LetterGrade)
+            .HasMaxLength(5);
+
+        b.Property(x => x.GradePoint)
+            .HasColumnType("numeric(3,2)");
+
         b.HasQueryFilter(x => !x.IsDeleted);
 
         b.HasOne(x => x.StudentSemesterEnrollment)

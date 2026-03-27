@@ -13,4 +13,6 @@ public class Exam : BaseAuditableEntity
     public decimal MaxScore { get; set; } = 100;
     public decimal WeightPercentage { get; set; }
     public bool IsActive { get; set; } = true;
+
+    public ICollection<ExamResult> ExamResults { get; set; } = new List<ExamResult>();
 }

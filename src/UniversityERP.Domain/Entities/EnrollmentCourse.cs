@@ -16,4 +16,9 @@ public class EnrollmentCourse : BaseAuditableEntity
     public EnrollmentCourseStatus Status { get; set; } = EnrollmentCourseStatus.Enrolled;
     public DateTime EnrolledAt { get; set; }
     public DateTime? DroppedAt { get; set; }
+    public decimal? FinalNumericScore { get; set; }
+    public string? LetterGrade { get; set; }
+    public decimal? GradePoint { get; set; }
+
+    public ICollection<ExamResult> ExamResults { get; set; } = new List<ExamResult>();
 }
