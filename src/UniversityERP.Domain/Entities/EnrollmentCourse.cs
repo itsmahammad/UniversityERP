@@ -21,4 +21,5 @@ public class EnrollmentCourse : BaseAuditableEntity
     public decimal? GradePoint { get; set; }
 
     public ICollection<ExamResult> ExamResults { get; set; } = new List<ExamResult>();
+    public ICollection<AttendanceRecord> AttendanceRecords { get; set; } = new List<AttendanceRecord>();
 }

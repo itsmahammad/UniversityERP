@@ -47,5 +47,7 @@ public static class InfrastructureServiceRegistration
         services.AddScoped<IExamService, ExamService>();
         services.AddScoped<IExamResultService, ExamResultService>();
         services.AddScoped<IGpaService, GpaService>();
+        services.AddScoped<IAttendanceSessionService, AttendanceSessionService>();
+        services.AddScoped<IAttendanceRecordService, AttendanceRecordService>();
     }
 }

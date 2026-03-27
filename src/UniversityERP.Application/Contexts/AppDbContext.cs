@@ -44,4 +44,6 @@ internal class AppDbContext : DbContext
     public DbSet<EnrollmentCourse> EnrollmentCourses => Set<EnrollmentCourse>();
     public DbSet<Exam> Exams => Set<Exam>();
     public DbSet<ExamResult> ExamResults => Set<ExamResult>();
+    public DbSet<AttendanceSession> AttendanceSessions => Set<AttendanceSession>();
+    public DbSet<AttendanceRecord> AttendanceRecords => Set<AttendanceRecord>();
 }

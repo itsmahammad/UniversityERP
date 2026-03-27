@@ -18,4 +18,5 @@ public class CourseOffering : BaseAuditableEntity
 
     public ICollection<EnrollmentCourse> EnrollmentCourses { get; set; } = new List<EnrollmentCourse>();
     public ICollection<Exam> Exams { get; set; } = new List<Exam>();
+    public ICollection<AttendanceSession> AttendanceSessions { get; set; } = new List<AttendanceSession>();
 }
