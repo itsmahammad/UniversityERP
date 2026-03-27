@@ -21,4 +21,6 @@ public class Semester : BaseAuditableEntity
 
     public int MaxCredits { get; set; } = 30;
     public bool IsActive { get; set; } = true;
+
+    public ICollection<CourseOffering> CourseOfferings { get; set; } = new List<CourseOffering>();
 }

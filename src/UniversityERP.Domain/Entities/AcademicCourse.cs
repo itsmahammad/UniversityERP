@@ -17,4 +17,5 @@ public class AcademicCourse : BaseAuditableEntity
     public ICollection<ProgramCourse> ProgramCourses { get; set; } = new List<ProgramCourse>();
     public ICollection<CoursePrerequisite> CoursePrerequisites { get; set; } = new List<CoursePrerequisite>();
     public ICollection<CoursePrerequisite> RequiredForCourses { get; set; } = new List<CoursePrerequisite>();
+    public ICollection<CourseOffering> CourseOfferings { get; set; } = new List<CourseOffering>();
 }

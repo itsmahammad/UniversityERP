@@ -15,4 +15,6 @@ public class Teacher : BaseAuditableEntity
     public DateOnly HireDate { get; set; }
 
     public bool IsActive { get; set; } = true;
+
+    public ICollection<CourseOffering> CourseOfferings { get; set; } = new List<CourseOffering>();
 }
