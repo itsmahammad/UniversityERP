@@ -39,5 +39,6 @@ public static class InfrastructureServiceRegistration
         services.AddScoped<IStudentService, StudentService>();
         services.AddScoped<ITeacherService, TeacherService>();
         services.AddScoped<IAcademicCourseService, AcademicCourseService>();
+        services.AddScoped<IProgramCourseService, ProgramCourseService>();
     }
 }

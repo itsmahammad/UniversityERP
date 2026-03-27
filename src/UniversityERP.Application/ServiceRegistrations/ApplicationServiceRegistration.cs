@@ -33,5 +33,6 @@ public static class ApplicationServiceRegistration
         services.AddScoped<IStudentRepository, StudentRepository>();
         services.AddScoped<ITeacherRepository, TeacherRepository>();
         services.AddScoped<IAcademicCourseRepository, AcademicCourseRepository>();
+        services.AddScoped<IProgramCourseRepository, ProgramCourseRepository>();
     }
 }

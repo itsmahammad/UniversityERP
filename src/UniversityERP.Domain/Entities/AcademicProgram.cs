@@ -14,4 +14,5 @@ public class AcademicProgram : BaseAuditableEntity
     public Department Department { get; set; } = default!;
 
     public ICollection<Student> Students { get; set; } = new List<Student>();
+    public ICollection<ProgramCourse> ProgramCourses { get; set; } = new List<ProgramCourse>();
 }

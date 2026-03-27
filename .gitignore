@@ -21,6 +21,8 @@ dist/
 build/
 .env
 appsettings.Development.json
+src/.dotnet/
+
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs

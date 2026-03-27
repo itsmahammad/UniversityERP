@@ -37,4 +37,5 @@ internal class AppDbContext : DbContext
     public DbSet<User> Users { get; set; }
     public DbSet<Student> Students => Set<Student>();
     public DbSet<Teacher> Teachers => Set<Teacher>();
+    public DbSet<ProgramCourse> ProgramCourses => Set<ProgramCourse>();
 }

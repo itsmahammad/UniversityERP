@@ -13,4 +13,6 @@ public class AcademicCourse : BaseAuditableEntity
 
     public int EctsCredits { get; set; }
     public bool IsActive { get; set; } = true;
+
+    public ICollection<ProgramCourse> ProgramCourses { get; set; } = new List<ProgramCourse>();
 }
