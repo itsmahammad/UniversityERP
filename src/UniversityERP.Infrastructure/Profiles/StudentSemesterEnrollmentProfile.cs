@@ -14,6 +14,7 @@ public class StudentSemesterEnrollmentProfile : Profile
         CreateMap<StudentSemesterEnrollment, StudentSemesterEnrollmentGetDto>()
             .ForMember(d => d.StudentFullName, o => o.MapFrom(s => s.Student.User.FullName))
             .ForMember(d => d.SemesterName, o => o.MapFrom(s => s.Semester.AcademicYear.Name + " " + s.Semester.Term))
-            .ForMember(d => d.AcademicProgramName, o => o.MapFrom(s => s.AcademicProgram.Name));
+            .ForMember(d => d.AcademicProgramName, o => o.MapFrom(s => s.AcademicProgram.Name))
+            .ForMember(d => d.TotalEnrolledCredits, o => o.MapFrom(s => s.EnrollmentCourses.Where(ec => ec.Status != Domain.Enums.EnrollmentCourseStatus.Dropped).Sum(ec => ec.CreditsSnapshot)));
     }
 }

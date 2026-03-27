@@ -19,4 +19,6 @@ public class StudentSemesterEnrollment : BaseAuditableEntity
     public decimal? StartingCgpa { get; set; }
     public StudentSemesterEnrollmentStatus Status { get; set; } = StudentSemesterEnrollmentStatus.Draft;
     public string? Notes { get; set; }
+
+    public ICollection<EnrollmentCourse> EnrollmentCourses { get; set; } = new List<EnrollmentCourse>();
 }

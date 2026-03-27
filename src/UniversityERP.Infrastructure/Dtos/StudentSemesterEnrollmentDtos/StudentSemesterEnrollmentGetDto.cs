@@ -1,4 +1,5 @@
 using UniversityERP.Domain.Enums;
+using UniversityERP.Infrastructure.Dtos.EnrollmentCourseDtos;
 
 namespace UniversityERP.Infrastructure.Dtos.StudentSemesterEnrollmentDtos;
 
@@ -13,7 +14,9 @@ public class StudentSemesterEnrollmentGetDto
     public string AcademicProgramName { get; set; } = default!;
     public StudentStatus StudentStatus { get; set; }
     public int MaxCredits { get; set; }
+    public int TotalEnrolledCredits { get; set; }
     public decimal? StartingCgpa { get; set; }
     public StudentSemesterEnrollmentStatus Status { get; set; }
     public string? Notes { get; set; }
+    public List<EnrollmentCourseGetDto> EnrollmentCourses { get; set; } = [];
 }

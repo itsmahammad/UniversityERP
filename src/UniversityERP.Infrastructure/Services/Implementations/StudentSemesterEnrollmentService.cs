@@ -101,6 +101,13 @@ internal class StudentSemesterEnrollmentService : IStudentSemesterEnrollmentServ
             .Include(x => x.Semester)
                 .ThenInclude(x => x.AcademicYear)
             .Include(x => x.AcademicProgram)
+            .Include(x => x.EnrollmentCourses)
+                .ThenInclude(x => x.CourseOffering)
+                    .ThenInclude(x => x.AcademicCourse)
+            .Include(x => x.EnrollmentCourses)
+                .ThenInclude(x => x.CourseOffering)
+                    .ThenInclude(x => x.Teacher)
+                        .ThenInclude(x => x.User)
             .OrderByDescending(x => x.Semester.StartDate)
             .ThenBy(x => x.Student.User.FullName)
             .ToListAsync();
@@ -123,6 +130,13 @@ internal class StudentSemesterEnrollmentService : IStudentSemesterEnrollmentServ
             .Include(x => x.Semester)
                 .ThenInclude(x => x.AcademicYear)
             .Include(x => x.AcademicProgram)
+            .Include(x => x.EnrollmentCourses)
+                .ThenInclude(x => x.CourseOffering)
+                    .ThenInclude(x => x.AcademicCourse)
+            .Include(x => x.EnrollmentCourses)
+                .ThenInclude(x => x.CourseOffering)
+                    .ThenInclude(x => x.Teacher)
+                        .ThenInclude(x => x.User)
             .FirstOrDefaultAsync(x => x.Id == id);
 
         if (entity is null)

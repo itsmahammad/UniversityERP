@@ -15,4 +15,6 @@ public class CourseOffering : BaseAuditableEntity
 
     public string Section { get; set; } = string.Empty;
     public bool IsActive { get; set; } = true;
+
+    public ICollection<EnrollmentCourse> EnrollmentCourses { get; set; } = new List<EnrollmentCourse>();
 }
