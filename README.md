@@ -322,18 +322,6 @@ dotnet restore .\UniversityERP.slnx
 
 ### Configure local secrets
 
-Do not keep real secrets in committed config files.
-
-This repository currently contains development secrets inside:
-
-- `src/UniversityERP.API/appsettings.Development.json`
-
-Those values should be rotated and removed from committed configuration.
-
-This repository now uses placeholder values in development config and includes:
-
-- `.env.example` for Docker/local environment variable setup
-
 Recommended secret strategy:
 
 - `appsettings.json`
@@ -534,10 +522,3 @@ The main strength of the project is not only the number of modules, but the way 
 - credit-limit enforcement
 - exam-based final score calculation
 - GPA derived from completed attempts
-
-## Next Recommended Cleanup Steps
-
-- rotate and remove committed secrets from development config
-- add Docker support
-- test the full workflow end to end on a clean database
-- add a small sample data guide or seed notes
