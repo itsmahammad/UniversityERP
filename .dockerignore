@@ -1,0 +1,15 @@
+.git
+.github
+.idea
+.vs
+
+**/bin
+**/obj
+**/.vs
+**/.idea
+**/.dotnet
+
+.env
+.env.*
+
+src/UniversityERP.API/appsettings.Development.json
