@@ -20,6 +20,7 @@ node_modules/
 dist/
 build/
 .env
+.env.*
 appsettings.Development.json
 src/.dotnet/
 
@@ -374,4 +375,4 @@ MigrationBackup/
 .ionide/
 
 # Fody - auto-generated XML schema
-FodyWeavers.xsdappsettings.Development.json
+FodyWeavers.xsd
