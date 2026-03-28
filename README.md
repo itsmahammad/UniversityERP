@@ -330,6 +330,10 @@ This repository currently contains development secrets inside:
 
 Those values should be rotated and removed from committed configuration.
 
+This repository now uses placeholder values in development config and includes:
+
+- `.env.example` for Docker/local environment variable setup
+
 Recommended secret strategy:
 
 - `appsettings.json`
