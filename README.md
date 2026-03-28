@@ -429,6 +429,66 @@ Suggested runtime configuration through environment variables:
 - `Email__UseStartTls`
 - `UniversityEmail__Domain`
 
+### Run with Docker Compose
+
+The repository includes:
+
+- `Dockerfile`
+- `docker-compose.yml`
+
+You can start the API and PostgreSQL together with:
+
+```powershell
+docker compose up --build
+```
+
+The API will be available at:
+
+```text
+http://localhost:8080
+```
+
+### Docker environment variables
+
+`docker-compose.yml` reads values from environment variables and supports a local `.env` file.
+
+Recommended `.env` example:
+
+```env
+POSTGRES_DB=UniversityERP
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=your_postgres_password
+
+JWT_KEY=your-long-random-jwt-secret
+JWT_ISSUER=UniversityERP
+JWT_AUDIENCE=UniversityERP
+JWT_EXP_MINUTES=60
+
+UNIVERSITY_EMAIL_DOMAIN=uni.edu.az
+
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USERNAME=your_email@example.com
+EMAIL_PASSWORD=your_app_password
+EMAIL_FROM_EMAIL=your_email@example.com
+EMAIL_FROM_NAME=University ERP
+EMAIL_USE_STARTTLS=true
+```
+
+The `.env` file is already ignored by Git and should not be committed.
+
+### Important note about migrations in Docker
+
+The current setup starts the API and PostgreSQL containers, but database migrations still need to be applied.
+
+You can apply them from the host machine:
+
+```powershell
+dotnet ef database update --project .\src\UniversityERP.Application\UniversityERP.Application.csproj --startup-project .\src\UniversityERP.API\UniversityERP.API.csproj --context AppDbContext
+```
+
+If you want, the next step after this can be adding a small migration helper workflow for Docker too.
+
 ## Current Scope Summary
 
 Implemented:

@@ -1,0 +1,42 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: universityerp-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-UniversityERP}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: universityerp-api
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=${POSTGRES_DB:-UniversityERP};Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:-postgres}
+      Jwt__Key: ${JWT_KEY:-CHANGE_ME_TO_A_LONG_RANDOM_SECRET_KEY}
+      Jwt__Issuer: ${JWT_ISSUER:-UniversityERP}
+      Jwt__Audience: ${JWT_AUDIENCE:-UniversityERP}
+      Jwt__ExpMinutes: ${JWT_EXP_MINUTES:-60}
+      UniversityEmail__Domain: ${UNIVERSITY_EMAIL_DOMAIN:-uni.edu.az}
+      Email__Host: ${EMAIL_HOST:-smtp.gmail.com}
+      Email__Port: ${EMAIL_PORT:-587}
+      Email__Username: ${EMAIL_USERNAME:-}
+      Email__Password: ${EMAIL_PASSWORD:-}
+      Email__FromEmail: ${EMAIL_FROM_EMAIL:-}
+      Email__FromName: ${EMAIL_FROM_NAME:-University ERP}
+      Email__UseStartTls: ${EMAIL_USE_STARTTLS:-true}
+    ports:
+      - "8080:8080"
+
+volumes:
+  postgres_data:
