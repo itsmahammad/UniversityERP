@@ -6,7 +6,7 @@ using UniversityERP.Domain.Entities.Common;
 
 namespace UniversityERP.Application.Interceptors;
 
-internal class BaseAuditableInterceptor(IHttpContextAccessor _contextAccessor) : SaveChangesInterceptor
+public class BaseAuditableInterceptor(IHttpContextAccessor _contextAccessor) : SaveChangesInterceptor
 {
 
     public override ValueTask<InterceptionResult<int>> SavingChangesAsync(DbContextEventData eventData, InterceptionResult<int> result, CancellationToken cancellationToken = default)

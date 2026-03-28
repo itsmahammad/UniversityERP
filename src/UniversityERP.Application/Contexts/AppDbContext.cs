@@ -4,7 +4,7 @@ using UniversityERP.Domain.Entities;
 
 namespace UniversityERP.Application.Contexts;
 
-internal class AppDbContext : DbContext
+public class AppDbContext : DbContext
 {
     private readonly BaseAuditableInterceptor _auditableInterceptor;
 

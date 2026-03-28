@@ -2,10 +2,12 @@ using System.Security.Claims;
 using System.Text;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using UniversityERP.API.Middlewares;
 using UniversityERP.Application.ServiceRegistrations;
+using UniversityERP.Application.Contexts;
 using UniversityERP.Domain.Enums;
 using UniversityERP.Infrastructure.Options;
 using UniversityERP.Infrastructure.ServiceRegistrations;
@@ -101,10 +103,19 @@ public class Program
 
         app.MapControllers();
 
+        await ApplyMigrationsAsync(app);
+
         //Seed admin user (DEV ONLY)
         await SeedAdminAsync(app);
 
         await app.RunAsync();
+    }
+
+    private static async Task ApplyMigrationsAsync(WebApplication app)
+    {
+        using var scope = app.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        await dbContext.Database.MigrateAsync();
     }
 
     private static async Task SeedAdminAsync(WebApplication app)
